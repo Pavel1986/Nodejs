@@ -3,12 +3,19 @@ console.log("Node.js server started at 8080 port.");
 
 io.on('connection', function (socket) {
     
-    console.log('Connected');
+  console.log('Connected');
+          
+  socket.on('join', function (data) {
+        
+    socket.join(data.topic);
     
-  io.emit('this', { will: 'be received by everyone'});
-
-  socket.on('private message', function (from, msg) {
-    console.log('I received a private message by ', from, ' saying ', msg);
+  });
+  
+  socket.on('message', function (data) {
+        
+    console.log('Reiceved message: ' + data.message);
+    io.to(data.topic).emit('message', data.message);
+    
   });
 
   socket.on('disconnect', function () {
