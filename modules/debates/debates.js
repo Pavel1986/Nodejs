@@ -2,6 +2,7 @@ var Mongoose = require('mongoose');
 var async = require('async');
 
 /* Получение схем для mongoose моделей */
+var TopicModel = require('./debatesSchemes').DebateModels.Topic;
 var TopicMessagesModel = require('./debatesSchemes').DebateModels.TopicMessages;
 
 var GetMessagesByTopicID = function(TopicID, callback){
@@ -14,7 +15,7 @@ var GetMessagesByTopicID = function(TopicID, callback){
 
 };
 
-var SaveMessage = function (arParams, callback){
+var SaveMessage = function(arParams, callback){
 
     var NewMessage = TopicMessagesModel();
     //NewMessage.UserID =
@@ -29,7 +30,19 @@ var SaveMessage = function (arParams, callback){
 
 }
 
+var CheckTopics = function(){
+       
+    TopicModel.find( { status_code : "waiting" }, "waiting", { lean : true }, function(err, TopicsList){            
+        if(err){
+            console.log(err);
+        }
+        
+        console.log(TopicsList);
+    });
+}
+
 module.exports = {
     GetMessagesByTopicID         : GetMessagesByTopicID,
-    SaveMessage                  : SaveMessage
+    SaveMessage                  : SaveMessage,
+    CheckTopics                  : CheckTopics
 }
