@@ -2,6 +2,13 @@ var Mongoose = require('mongoose');
 var ObjectId = Mongoose.Schema.Types.ObjectId;
 var DebateModels = new Object();
 
+//Схема обсуждения
+var TopicSchema = new Mongoose.Schema({
+    status_code : { type : String }
+
+}, { collection : "Topic" });
+DebateModels.Topic = Mongoose.model('Topic', TopicSchema);
+
 var TopicMessagesSchema = new Mongoose.Schema({
 
     author_id : { type : String },
