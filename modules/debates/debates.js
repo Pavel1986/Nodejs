@@ -5,6 +5,8 @@ var async = require('async');
 var TopicModel = require('./debatesSchemes').DebateModels.Topic;
 var TopicMessagesModel = require('./debatesSchemes').DebateModels.TopicMessages;
 
+var CheckingTopics = false;
+
 var GetMessagesByTopicID = function(TopicID, callback){
 
     TopicMessagesModel.find({ topic_id : TopicID }, null, { lean : true, sort : { date_created : 1 } }, function(err, TopicMessages){
@@ -31,6 +33,37 @@ var SaveMessage = function(arParams, callback){
 }
 
 var CheckTopics = function(){
+    
+    setInterval(function() {
+        
+    arResult = new Object();
+    
+    async.waterfall([
+            function(callback){                
+                //Не происходит ли в данный момент проверка обсуждений
+                if(CheckingTopics){
+                    console.log('! Проверка уже запущенна !');
+                    callback(true, arResult);
+                }else{
+                    callback(null, arResult);
+                }                
+            },
+            function(arResult, callback){                
+                //Производим проверку для перевода обсуждений из статуса "waiting" в статус "processing"
+                callback(null, arResult);
+            },
+            function(arResult, callback){
+                //Производим проверку для перевода обсуждений из статуса "processing" в статус "closed"
+                callback(null, arResult);
+            }
+        ], function (Err, arResult) {
+            //Разрешаем дальнейшую проверку обсуждений
+            CheckingTopics = true;
+        });   
+        
+    }, 5000);
+
+    /*
        
     TopicModel.find( { status_code : "waiting" }, "waiting", { lean : true }, function(err, TopicsList){            
         if(err){
@@ -38,7 +71,7 @@ var CheckTopics = function(){
         }
         
         console.log(TopicsList);
-    });
+    });*/
 }
 
 module.exports = {
