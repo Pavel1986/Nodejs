@@ -3,23 +3,7 @@ var io = require('socket.io')(8080);
 var mongoose = require('mongoose').connect('mongodb://127.0.0.1/debates');
 var debatesModule = require('./modules/debates/debates');
 
-/*
-var EventEmitter = require('events').EventEmitter;
-var TopicsChecker = new EventEmitter();
-
-radium.on('radiation', function(ray) {
-    console.log(ray);
-});
-*/
-
-setInterval(function() {
-    debatesModule.CheckTopics();
-}, 5000);
-
-
-
-
-console.log("Node.js server started at 8080 port.");
+debatesModule.CheckTopics();
 
 io.on('connection', function (socket) {
               
@@ -102,3 +86,5 @@ io.on('connection', function (socket) {
     io.sockets.emit('Disconnected');
   });
 });
+
+console.log("Node.js server started at 8080 port.");
