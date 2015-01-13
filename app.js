@@ -3,7 +3,9 @@ var io = require('socket.io')(8080);
 var mongoose = require('mongoose').connect('mongodb://127.0.0.1/debates');
 var debatesModule = require('./modules/debates/debates');
 
-debatesModule.CheckTopics();
+//debatesModule.CheckTopics();
+
+console.log('next work');
 
 io.on('connection', function (socket) {
               

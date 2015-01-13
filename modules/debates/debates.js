@@ -32,33 +32,70 @@ var SaveMessage = function(arParams, callback){
 
 }
 
+var sleep = function (time, callback) {
+    var stop = new Date().getTime();
+    while(new Date().getTime() < stop + time) {
+        ;
+    }
+    callback();
+}
+
 var CheckTopics = function(){
+      
+    /*
+    setInterval(function() {
+        
+        console.log('Starting to check topics.');
+        
+        sleep(12000, function(){
+            console.log('Waked up!');
+        });
+        
+        
+    }, 5000);
+    */
+    
     
     setInterval(function() {
+        
+    console.log('\n Запущенна проверка \n');
         
     arResult = new Object();
     
     async.waterfall([
             function(callback){                
-                //Не происходит ли в данный момент проверка обсуждений
+                console.log("Не происходит ли в данный момент проверка обсуждений");
                 if(CheckingTopics){
                     console.log('! Проверка уже запущенна !');
                     callback(true, arResult);
                 }else{
+                    CheckingTopics = true;
                     callback(null, arResult);
                 }                
             },
             function(arResult, callback){                
-                //Производим проверку для перевода обсуждений из статуса "waiting" в статус "processing"
-                callback(null, arResult);
+                console.log("Производим проверку для перевода обсуждений из статуса \"waiting\" в статус \"processing\"");
+                
+                TopicModel.find( { status_code : "waiting" }, "waiting", {}, function(err, TopicsList){            
+                    if(err){
+                        console.log(err);
+                    }
+
+                    console.log(TopicsList);
+                });
             },
             function(arResult, callback){
-                //Производим проверку для перевода обсуждений из статуса "processing" в статус "closed"
-                callback(null, arResult);
+                console.log("Производим проверку для перевода обсуждений из статуса \"processing\" в статус \"closed\"");
+                sleep(12000, function(){
+                    console.log('Waked up!');
+                    callback(null, arResult);
+                });                        
             }
         ], function (Err, arResult) {
-            //Разрешаем дальнейшую проверку обсуждений
-            CheckingTopics = true;
+            if(!Err){
+                console.log("Проверка закончена. Разрешаем дальнейшую проверку обсуждений.");
+                CheckingTopics = false;
+            }
         });   
         
     }, 5000);
