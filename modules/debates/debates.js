@@ -41,21 +41,7 @@ var sleep = function (time, callback) {
 }
 
 var CheckTopics = function(){
-      
-    /*
-    setInterval(function() {
-        
-        console.log('Starting to check topics.');
-        
-        sleep(12000, function(){
-            console.log('Waked up!');
-        });
-        
-        
-    }, 5000);
-    */
-    
-    
+         
     setInterval(function() {
         
     console.log('\n Запущенна проверка \n');
@@ -64,9 +50,9 @@ var CheckTopics = function(){
     
     async.waterfall([
             function(callback){                
-                console.log("Не происходит ли в данный момент проверка обсуждений");
+                //console.log("Не происходит ли в данный момент проверка обсуждений");
                 if(CheckingTopics){
-                    console.log('! Проверка уже запущенна !');
+                  //  console.log('! Проверка уже запущена !');
                     callback(true, arResult);
                 }else{
                     CheckingTopics = true;
@@ -74,41 +60,26 @@ var CheckTopics = function(){
                 }                
             },
             function(arResult, callback){                
-                console.log("Производим проверку для перевода обсуждений из статуса \"waiting\" в статус \"processing\"");
-                
-                TopicModel.find( { status_code : "waiting" }, "waiting", {}, function(err, TopicsList){            
+                //console.log("Производим проверку для перевода обсуждений из статусов \"waiting\" и \"processing\", в статус \"closed\"");
+                //console.log("Текущее время в unix формате: " + new Date().getTime() / 1000);                
+                //TopicModel.find( { status_code : "waiting", date_temp_closing : { $lte : new Date().getTime() / 1000 } }, "waiting", {}, function(err, TopicsList){            
+                //TopicModel.update( { status_code : "waiting",  date_temp_closing : { $lte : new Date().getTime() / 1000 } }, { status_code : "closed" }, { multi: true }, function(err, TopicsList){
+                TopicModel.update( { "$or" : [ { status_code : "waiting" }, { status_code : "processing"} ] ,  date_temp_closing : { $lte : new Date().getTime() / 1000 } }, { status_code : "closed" }, { multi: true }, function(err, TopicsList){
                     if(err){
                         console.log(err);
+                        callback(true, err);                   
                     }
-
-                    console.log(TopicsList);
+                    callback(null, arResult);                   
                 });
-            },
-            function(arResult, callback){
-                console.log("Производим проверку для перевода обсуждений из статуса \"processing\" в статус \"closed\"");
-                sleep(12000, function(){
-                    console.log('Waked up!');
-                    callback(null, arResult);
-                });                        
             }
         ], function (Err, arResult) {
             if(!Err){
-                console.log("Проверка закончена. Разрешаем дальнейшую проверку обсуждений.");
+                //console.log("Проверка закончена. Разрешаем дальнейшую проверку обсуждений.");
                 CheckingTopics = false;
             }
         });   
         
     }, 5000);
-
-    /*
-       
-    TopicModel.find( { status_code : "waiting" }, "waiting", { lean : true }, function(err, TopicsList){            
-        if(err){
-            console.log(err);
-        }
-        
-        console.log(TopicsList);
-    });*/
 }
 
 module.exports = {

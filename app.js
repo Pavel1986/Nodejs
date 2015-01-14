@@ -3,9 +3,17 @@ var io = require('socket.io')(8080);
 var mongoose = require('mongoose').connect('mongodb://127.0.0.1/debates');
 var debatesModule = require('./modules/debates/debates');
 
-//debatesModule.CheckTopics();
+//Js Date object
+current_date = new Date(new Date().getTime() / 1000);
+//Unix time without milliseconds, like in topics
+current_date = new Date().getTime() / 1000;
+//console.log(current_date);
 
-console.log('next work');
+//Converting topic unix time to js unix time
+topic_time = new Date(1421231881 * 1000);
+
+//console.log(topic_time);
+debatesModule.CheckTopics();
 
 io.on('connection', function (socket) {
               
