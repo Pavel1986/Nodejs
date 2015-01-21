@@ -2,6 +2,8 @@ var async = require('async');
 var io = require('socket.io')(8080);
 var mongoose = require('mongoose').connect('mongodb://127.0.0.1/debates');
 var debatesModule = require('./modules/debates/debates');
+var usersModule = require('./modules/users/users');
+var cookie = require('cookie');
 
 //Js Date object
 current_date = new Date(new Date().getTime() / 1000);
@@ -13,11 +15,17 @@ current_date = new Date().getTime() / 1000;
 topic_time = new Date(1421231881 * 1000);
 
 //console.log(topic_time);
-debatesModule.CheckTopics();
+//debatesModule.CheckTopics();
 
 io.on('connection', function (socket) {
+    
+    socket.on('joinTopic', function (data) {
+        
+        socket.join(data.topic_id);        
+    
+    });
               
-  socket.on('join', function (data) {
+  /*socket.on('join', function (data) {
         
     socket.join(data.topic_id);
     var arResult = new Object();
@@ -50,7 +58,7 @@ io.on('connection', function (socket) {
         });
     
     
-  });
+  });*/
   
   socket.on('message', function (data) {
          
@@ -89,6 +97,16 @@ io.on('connection', function (socket) {
                 console.log('Main async error while saving topic message');
             }
         });        
+    
+  });
+  
+  socket.on('addMember', function (topic_id, user_id) {
+      
+    parsedCookieID = cookie.parse(socket.handshake.headers['cookie']).DBSession;     
+        
+    usersModule.CheckUserAuthorizationByCookieID(parsedCookieID, function(arResult){
+        console.log(arResult);
+    });
     
   });
 
