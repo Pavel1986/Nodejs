@@ -32,14 +32,6 @@ var SaveMessage = function(arParams, callback){
 
 }
 
-var sleep = function (time, callback) {
-    var stop = new Date().getTime();
-    while(new Date().getTime() < stop + time) {
-        ;
-    }
-    callback();
-}
-
 var CheckTopics = function(){
          
     setInterval(function() {

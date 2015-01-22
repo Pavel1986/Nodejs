@@ -100,13 +100,25 @@ io.on('connection', function (socket) {
     
   });
   
-  socket.on('addMember', function (topic_id, user_id) {
-      
-    parsedCookieID = cookie.parse(socket.handshake.headers['cookie']).DBSession;     
-        
-    usersModule.CheckUserAuthorizationByCookieID(parsedCookieID, function(arResult){
-        console.log(arResult);
-    });
+  socket.on('addMember', function (SocketData) {
+           
+    parsedCookieID = cookie.parse(socket.handshake.headers['cookie']).DBSession;  
+    
+    if(typeof(parsedCookieID) !== "undefined" || SocketData.user_id.length > 0){
+    
+        arParams = new Object({ _id : SocketData.user_id, lastCookieId : parsedCookieID  });
+
+        usersModule.CheckUserAuthorization(arParams, function(arResult){
+
+            if(arResult){
+                console.log("Authorized");
+            }else{
+                console.log("Not authorized");
+            }
+
+        });
+    
+    }
     
   });
 
