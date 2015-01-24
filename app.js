@@ -101,6 +101,47 @@ io.on('connection', function (socket) {
   });
   
   socket.on('addMember', function (SocketData) {
+                
+    arResult = new Object();
+    
+    arResult.TopicID = SocketData.topic_id;
+    arResult.MemberID = SocketData.user_id;
+    arResult.CookieID = cookie.parse(socket.handshake.headers['cookie']).DBSession;
+    arResult.MemberSocketID = socket.id;
+    
+    console.log(arResult);
+    
+    async.waterfall([
+            function(callback){                
+                console.log("Проверка авторизации пользователя. Получаем пользователя и находим его язык");
+                callback(null, arResult);
+            },
+            function(arResult, callback){                
+                console.log("Проверяем, участвует ли пользователь в других обсуждениях");
+                callback(null, arResult);
+            },
+            function(arResult, callback){
+                console.log("Проверяем обсуждение по статусу и есть ли в нём место");
+                callback(null, arResult); 
+            },
+            function(arResult, callback){
+                console.log("Обновляем обсуждение (members, status, unix_temp_time)");
+                callback(null, arResult); 
+            },
+            function(arResult, callback){
+                console.log("Производим рассылку сокет-сообщений для участников обсуждения, что бы перезагрузить страницу");
+                callback(null, arResult); 
+            }
+        ], function (Err, arResult) {
+            //Отправляем ответ
+            if(Err){
+                console.log("Отправляем сокет-сообщение кандидату с сообщением об ошибке");
+            }else{
+                console.log("Находим автора обсуждения и его сокетID и отправляем ему сокет-сообщение, что его обсуждение началось.");
+            }
+        });            
+    
+    /*  
            
     parsedCookieID = cookie.parse(socket.handshake.headers['cookie']).DBSession;  
     
@@ -118,7 +159,7 @@ io.on('connection', function (socket) {
 
         });
     
-    }
+    }*/
     
   });
 
