@@ -4,6 +4,18 @@ var async = require('async');
 /* Получение схем для mongoose моделей */
 var UserModel = require('./usersSchemes').UsersModels.User;
 
+var GetUser = function(Params, Fields, Options, FuncCallback){    
+
+    //Выбираем пользователя, у которого время закрытия сессии больше, чем текущее. 
+    UserModel.findOne( Params, Fields, Options, function(err, User){
+        if(User){
+            FuncCallback(User);                
+        }else{
+            FuncCallback(false);
+        }
+    });
+}
+
 var CheckUserAuthorization = function(arParams, FuncCallback){
     
     arParams.lastCookieExpires = { $gte : new Date().getTime() / 1000 };
@@ -13,7 +25,7 @@ var CheckUserAuthorization = function(arParams, FuncCallback){
     console.log(arParams);
 
     //Выбираем пользователя, у которого время закрытия сессии больше, чем текущее. 
-    UserModel.findOne( arParams, '_id', function(err, User){
+    UserModel.findOne( arParams, '_id', { lean : true }, function(err, User){
         if(User){
             FuncCallback(true);                
         }else{
@@ -23,5 +35,6 @@ var CheckUserAuthorization = function(arParams, FuncCallback){
 }
 
 module.exports = {
-    CheckUserAuthorization : CheckUserAuthorization
+    CheckUserAuthorization : CheckUserAuthorization,
+    GetUser : GetUser
 }

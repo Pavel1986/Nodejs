@@ -113,8 +113,22 @@ io.on('connection', function (socket) {
     
     async.waterfall([
             function(callback){                
-                console.log("Проверка авторизации пользователя. Получаем пользователя и находим его язык");
-                callback(null, arResult);
+                console.log("Проверка авторизации пользователя. Получаем пользователя и находим его язык");                
+                usersModule.GetUser({ _id : arResult.MemberID, lastCookieId : arResult.CookieID, enabled : true }, "lastCookieExpires system_language", { lean : true }, function(arUser){
+
+                    if(arUser){
+                        console.log("Authorized");
+                        console.log(arUser);
+                        
+                        //Добавить проверку на авторизованность пользователя. Вынести этот функцию в отдельный метод.
+                        
+                    }else{
+                        callback(true, "User is not authorized");
+                    }
+                    
+                    
+
+                });                                
             },
             function(arResult, callback){                
                 console.log("Проверяем, участвует ли пользователь в других обсуждениях");
@@ -136,6 +150,7 @@ io.on('connection', function (socket) {
             //Отправляем ответ
             if(Err){
                 console.log("Отправляем сокет-сообщение кандидату с сообщением об ошибке");
+                console.log(arResult);
             }else{
                 console.log("Находим автора обсуждения и его сокетID и отправляем ему сокет-сообщение, что его обсуждение началось.");
             }
