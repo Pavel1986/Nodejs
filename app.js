@@ -22,6 +22,12 @@ io.on('connection', function (socket) {
     socket.on('joinTopic', function (data) {
         
         socket.join(data.topic_id);        
+        
+        //Если пользователь авторизован, то сохраняем в него последний SocketID
+        usersModule.UserModel.findOneAndUpdate({ lastCookieId : cookie.parse(socket.handshake.headers['cookie']).DBSession, lastCookieExpires : { $gte : new Date().getTime() / 1000 } }, { LastSocketId : socket._id }, function(err, arUser){
+            
+            console.log(arUser);
+        });
     
     });
               
