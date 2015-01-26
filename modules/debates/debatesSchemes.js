@@ -1,10 +1,13 @@
 var Mongoose = require('mongoose');
-var ObjectId = Mongoose.Schema.Types.ObjectId;
+require('mongoose-long')(Mongoose);
+var SchemaTypes = Mongoose.Schema.Types;
 var DebateModels = new Object();
 
 //Схема обсуждения
 var TopicSchema = new Mongoose.Schema({
-    status_code : { type : String }
+    status_code     : { type : String },
+    members         : { type : Array },
+    date_temp_closing  : { type: SchemaTypes.Long }
 
 }, { collection : "Topic" });
 DebateModels.Topic = Mongoose.model('Topic', TopicSchema);

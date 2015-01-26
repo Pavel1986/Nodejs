@@ -3,6 +3,7 @@ var async = require('async');
 
 /* Получение схем для mongoose моделей */
 var UserModel = require('./usersSchemes').UsersModels.User;
+var TopicModel = require('./../debates/debatesSchemes').DebateModels.Topic;
 
 var GetUser = function(Params, Fields, Options, FuncCallback){    
 
@@ -34,7 +35,20 @@ var CheckUserAuthorization = function(arParams, FuncCallback){
     });
 }
 
+var isUserAnyTopicMember = function(UserID, ExceptTopicID, FuncCallback){
+    
+    TopicModel.findOne( { members : UserID, "$or" : [ { status_code : "waiting" }, { status_code : "processing"} ] }, '_id', { lean : true }, function(err, arTopic){
+        if(arTopic){
+            FuncCallback(true);                
+        }else{
+            FuncCallback(false);
+        }
+    });
+    
+}
+
 module.exports = {
     CheckUserAuthorization : CheckUserAuthorization,
-    GetUser : GetUser
+    GetUser : GetUser,
+    isUserAnyTopicMember : isUserAnyTopicMember
 }

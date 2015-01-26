@@ -77,5 +77,6 @@ var CheckTopics = function(){
 module.exports = {
     GetMessagesByTopicID         : GetMessagesByTopicID,
     SaveMessage                  : SaveMessage,
-    CheckTopics                  : CheckTopics
+    CheckTopics                  : CheckTopics,
+    TopicModel                   : TopicModel
 }

@@ -102,48 +102,64 @@ io.on('connection', function (socket) {
   
   socket.on('addMember', function (SocketData) {
                 
-    arResult = new Object();
+    arResult = new Object();        
     
     arResult.TopicID = SocketData.topic_id;
     arResult.MemberID = SocketData.user_id;
     arResult.CookieID = cookie.parse(socket.handshake.headers['cookie']).DBSession;
-    arResult.MemberSocketID = socket.id;
-    
-    console.log(arResult);
+    arResult.MemberSocketID = socket.id;        
     
     async.waterfall([
             function(callback){                
-                console.log("Проверка авторизации пользователя. Получаем пользователя и находим его язык");                
-                usersModule.GetUser({ _id : arResult.MemberID, lastCookieId : arResult.CookieID, enabled : true }, "lastCookieExpires system_language", { lean : true }, function(arUser){
-
+                console.log("- Проверка авторизации пользователя. Получаем пользователя и находим его язык");                
+                usersModule.GetUser({ _id : arResult.MemberID, lastCookieId : arResult.CookieID, enabled : true, lastCookieExpires : { $gte : new Date().getTime() / 1000 } }, "system_language", { lean : true }, function(arUser){
                     if(arUser){
-                        console.log("Authorized");
-                        console.log(arUser);
-                        
-                        //Добавить проверку на авторизованность пользователя. Вынести этот функцию в отдельный метод.
-                        
+                        arResult.Language = arUser.system_language;
+                        callback(false, arResult);                        
                     }else{
                         callback(true, "User is not authorized");
                     }
-                    
-                    
-
                 });                                
             },
             function(arResult, callback){                
-                console.log("Проверяем, участвует ли пользователь в других обсуждениях");
-                callback(null, arResult);
+                console.log("- Проверяем, участвует ли пользователь в других обсуждениях");
+                usersModule.isUserAnyTopicMember(arResult.MemberID, false, function(isUserTopicMember){                    
+                    if(isUserTopicMember){
+                        callback(true, "User is member of active topics.");
+                    }else{
+                        callback(null, arResult);                    
+                    }                    
+                })                
             },
             function(arResult, callback){
-                console.log("Проверяем обсуждение по статусу и есть ли в нём место");
-                callback(null, arResult); 
+                console.log("- Проверяем обсуждение по статусу и есть ли в нём место");
+                debatesModule.TopicModel.findOne( { _id : arResult.TopicID, status_code : "waiting" }, 'members', { lean : true }, function(err, arTopic){
+                    if(arTopic){                        
+                        if(arTopic.members.length < 2){
+                            callback(null, arResult);                             
+                        }else{                            
+                            callback(true, "Topic has already 2 members."); 
+                        }                                                                        
+                    }else{
+                        callback(true, "Not found requested topic."); 
+                    }
+                });                
+            },
+            function(arResult, callback){                
+                console.log("- Обновляем обсуждение (members, status, unix_temp_time)");
+                debatesModule.TopicModel.findByIdAndUpdate( arResult.TopicID, { $push: { members : arResult.MemberID }, status_code : "processing", unix_temp_time : new Date().getTime() / 1000 }, function(err, numberAffected ){                   
+                    if(err){
+                        console.log(err);
+                        callback(true, err);                   
+                    }else{
+                        callback(null, arResult);
+                    }                    
+                });                
             },
             function(arResult, callback){
-                console.log("Обновляем обсуждение (members, status, unix_temp_time)");
-                callback(null, arResult); 
-            },
-            function(arResult, callback){
-                console.log("Производим рассылку сокет-сообщений для участников обсуждения, что бы перезагрузить страницу");
+                console.log("Производим рассылку сокет-сообщений для участников обсуждения, что бы перезагрузить страницу, кроме автора обсужения");
+                
+                
                 callback(null, arResult); 
             }
         ], function (Err, arResult) {
