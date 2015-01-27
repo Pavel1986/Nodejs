@@ -49,6 +49,7 @@ var isUserAnyTopicMember = function(UserID, ExceptTopicID, FuncCallback){
 
 module.exports = {
     CheckUserAuthorization : CheckUserAuthorization,
-    GetUser : GetUser,
-    isUserAnyTopicMember : isUserAnyTopicMember
+    GetUser                : GetUser,
+    isUserAnyTopicMember   : isUserAnyTopicMember,
+    UserModel              : UserModel
 }

@@ -19,52 +19,12 @@ topic_time = new Date(1421231881 * 1000);
 
 io.on('connection', function (socket) {
     
-    socket.on('joinTopic', function (data) {
-        
-        socket.join(data.topic_id);        
-        
-        //Если пользователь авторизован, то сохраняем в него последний SocketID
-        usersModule.UserModel.findOneAndUpdate({ lastCookieId : cookie.parse(socket.handshake.headers['cookie']).DBSession, lastCookieExpires : { $gte : new Date().getTime() / 1000 } }, { LastSocketId : socket._id }, function(err, arUser){
-            
-            console.log(arUser);
-        });
+    //Если пользователь авторизован, то сохраняем в него последний SocketID
+    usersModule.UserModel.findOneAndUpdate({ lastCookieId : cookie.parse(socket.handshake.headers['cookie']).DBSession, lastCookieExpires : { $gte : new Date().getTime() / 1000 } }, { LastSocketId : socket.id }, function(err, arUser){});    
     
-    });
-              
-  /*socket.on('join', function (data) {
-        
-    socket.join(data.topic_id);
-    var arResult = new Object();
-    
-     async.waterfall([
-            function(callback){                
-                //console.log("Получаем сообщения обсуждения об обсуждении");
-                
-                debatesModule.GetMessagesByTopicID( data.topic_id, function(err, doc){
-                    if(err){
-                        console.log('Error while saving topic message');
-                    }
-                    callback(null, doc);
-                });
-                
-                callback(null, arResult);
-            },
-            function(arResult, callback){                
-                
-                callback(null, arResult);
-            }
-        ], function (Err, arResult) {
-            //Отправляем ответ            
-            
-            if(!Err){
-                socket.emit('messages_list', { 'messages' : arResult });
-            }else{
-                console.log('Main async error while saving topic message');
-            }
-        });
-    
-    
-  });*/
+    socket.on('joinTopic', function (data) {        
+        socket.join(data.topic_id);                
+    });              
   
   socket.on('message', function (data) {
          
