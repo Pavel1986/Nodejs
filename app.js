@@ -163,6 +163,13 @@ io.on('connection', function (socket) {
   socket.on('disconnect', function () {
     io.sockets.emit('Disconnected');
   });
+  
+  /* For test only  */
+  socket.on('getUsersList', function (data){
+      //console.log(io.sockets.clients(data.topic_id));
+      console.log(io.sockets.adapter.rooms[data.topic_id]);
+  });
+  
 });
 
 console.log("Node.js server started at 8080 port.");
