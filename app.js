@@ -18,7 +18,7 @@ topic_time = new Date(1421231881 * 1000);
 //debatesModule.CheckTopics();
 
 io.on('connection', function (socket) {
-    
+            
     //Если пользователь авторизован, то сохраняем в него последний SocketID
     usersModule.UserModel.findOneAndUpdate({ lastCookieId : cookie.parse(socket.handshake.headers['cookie']).DBSession, lastCookieExpires : { $gte : new Date().getTime() / 1000 } }, { LastSocketId : socket.id }, function(err, arUser){});    
     
@@ -125,6 +125,7 @@ io.on('connection', function (socket) {
             function(arResult, callback){
                 console.log("Производим рассылку сокет-сообщений для участников обсуждения, что бы перезагрузить страницу, кроме автора обсужения");
                 
+                socket.to(arResult.TopicID).emit('TopicStarted', {});
                 
                 callback(null, arResult); 
             }
@@ -170,6 +171,30 @@ io.on('connection', function (socket) {
       console.log(io.sockets.adapter.rooms[data.topic_id]);
   });
   
+  socket.on('TopicStarted', function (data){
+      io.sockets.in(data.topic_id).emit('TopicStarted', {});
+       
+       RoomMembers = getAllRoomMembers(data.topic_id);
+       console.log(RoomMembers);
+       console.log(RoomMembers[socket.id]);
+      if (typeof RoomMembers[socket.id] !== 'undefined'){
+          console.log('Found current user');
+      }
+      
+      console.log('Topic started : ' + data.topic_id + ' Requested  by : '  + socket.id);
+  });
+  
 });
+
+function getAllRoomMembers(room, _nsp) {
+    var roomMembers = [];
+    var nsp = (typeof _nsp !== 'string') ? '/' : _nsp;
+
+    for( var member in io.nsps[nsp].adapter.rooms[room] ) {
+        roomMembers.push(member);
+    }
+
+    return roomMembers;
+}
 
 console.log("Node.js server started at 8080 port.");
