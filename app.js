@@ -18,12 +18,39 @@ topic_time = new Date(1421231881 * 1000);
 //debatesModule.CheckTopics();
 
 io.on('connection', function (socket) {
+    
+    console.log(socket.id);
             
     //Если пользователь авторизован, то сохраняем в него последний SocketID
     usersModule.UserModel.findOneAndUpdate({ lastCookieId : cookie.parse(socket.handshake.headers['cookie']).DBSession, lastCookieExpires : { $gte : new Date().getTime() / 1000 } }, { LastSocketId : socket.id }, function(err, arUser){});    
     
     socket.on('joinTopic', function (data) {        
-        socket.join(data.topic_id);                
+        socket.join(data.topic_id);           
+        
+        var arResult = new Object();
+
+async.waterfall([
+	function(callback){
+            //console.log("Получаем сообщения обсуждения об обсуждении");
+            debatesModule.GetMessagesByTopicID( data.topic_id, function(err, MessagesList){
+                    if(err){
+                            console.log('Error while saving topic message');
+                    }else{
+                            callback(null, MessagesList);
+                    }
+            });
+            },
+            function(arResult, callback){
+                    callback(null, arResult);
+            }], function (Err, arResult) {
+            //Отправляем ответ
+
+            if(!Err){
+                    socket.emit('messages_list', { 'messages' : arResult });
+            }else{
+                    console.log('Main async error while saving topic message');
+            }
+        });
     });              
   
   socket.on('message', function (data) {
@@ -81,7 +108,7 @@ io.on('connection', function (socket) {
                 usersModule.GetUser({ _id : arResult.MemberID, lastCookieId : arResult.CookieID, enabled : true, lastCookieExpires : { $gte : new Date().getTime() / 1000 } }, "system_language", { lean : true }, function(arUser){
                     if(arUser){
                         arResult.Language = arUser.system_language;
-                        callback(false, arResult);                        
+                        callback(null, arResult);                         
                     }else{
                         callback(true, "User is not authorized");
                     }
@@ -99,9 +126,10 @@ io.on('connection', function (socket) {
             },
             function(arResult, callback){
                 console.log("- Проверяем обсуждение по статусу и есть ли в нём место");
-                debatesModule.TopicModel.findOne( { _id : arResult.TopicID, status_code : "waiting" }, 'members', { lean : true }, function(err, arTopic){
+                debatesModule.TopicModel.findOne( { _id : arResult.TopicID, status_code : "waiting" }, 'members author_id', { lean : true }, function(err, arTopic){
                     if(arTopic){                        
                         if(arTopic.members.length < 2){
+                            arResult.AuthorID = arTopic.author_id;
                             callback(null, arResult);                             
                         }else{                            
                             callback(true, "Topic has already 2 members."); 
@@ -112,7 +140,7 @@ io.on('connection', function (socket) {
                 });                
             },
             function(arResult, callback){                
-                console.log("- Обновляем обсуждение (members, status, unix_temp_time)");
+                /*console.log("- Обновляем обсуждение (members, status, unix_temp_time)");
                 debatesModule.TopicModel.findByIdAndUpdate( arResult.TopicID, { $push: { members : arResult.MemberID }, status_code : "processing", unix_temp_time : new Date().getTime() / 1000 }, function(err, numberAffected ){                   
                     if(err){
                         console.log(err);
@@ -120,49 +148,36 @@ io.on('connection', function (socket) {
                     }else{
                         callback(null, arResult);
                     }                    
-                });                
+                });     */
+                callback(null, arResult);
             },
-            function(arResult, callback){
-                console.log("Производим рассылку сокет-сообщений для участников обсуждения, что бы перезагрузить страницу или отобразить информационное сообщение");
-                //1. Отправляем всем в обсуждении это сообщение
-                //2. Проверяем есть ли автор в комнате этого обсуждение, если нет, то отправляем ему личное сообщение
+            function(arResult, callback){                
+                console.log('Получаем активный сокетID автора обсуждения');
+                usersModule.GetUser({ _id : arResult.AuthorID }, "LastSocketId", { lean : true }, function(arUser){
+                    if(arUser){
+                        arResult.AuthorLastSocketId = arUser.LastSocketId;
+                        callback(null, arResult); 
+                    }else{
+                        callback(true, "Topic author is not found");
+                    }
+                });                                                 
                 
-                socket.to(arResult.TopicID).emit('TopicStarted', {});
-                
-                callback(null, arResult); 
             }
-        ], function (Err, arResult) {
-            //Отправляем ответ
-            
-            /* Тут меняем как-нибудь подругому */
+        ], function (Err, arResult) {                                    
             if(Err){
                 console.log("Отправляем сокет-сообщение кандидату с сообщением об ошибке");
                 console.log(arResult);
             }else{
-                console.log("Находим автора обсуждения и его сокетID и отправляем ему сокет-сообщение, что его обсуждение началось.");
+                console.log("Производим рассылку сокет-сообщений для участников обсуждения, что бы перезагрузить страницу или отобразить информационное сообщение");
+                //1. Проверяем есть ли автор в комнате этого обсуждение, если нет, то отправляем ему личное сообщение
+                //2. Отправляем всем в обсуждении это сообщение               
+                RoomMembers = getAllRoomMembers(arResult.TopicID);
+                if (RoomMembers.indexOf(arResult.AuthorLastSocketId) < 0){
+                   io.to(arResult.AuthorLastSocketId).emit('TopicStartedAuthor', {});
+                }
+                io.sockets.to(arResult.TopicID).emit('TopicStarted', {});
             }
-        });            
-    
-    /*  
-           
-    parsedCookieID = cookie.parse(socket.handshake.headers['cookie']).DBSession;  
-    
-    if(typeof(parsedCookieID) !== "undefined" || SocketData.user_id.length > 0){
-    
-        arParams = new Object({ _id : SocketData.user_id, lastCookieId : parsedCookieID  });
-
-        usersModule.CheckUserAuthorization(arParams, function(arResult){
-
-            if(arResult){
-                console.log("Authorized");
-            }else{
-                console.log("Not authorized");
-            }
-
-        });
-    
-    }*/
-    
+        });                    
   });
 
   socket.on('disconnect', function () {
