@@ -25,32 +25,26 @@ io.on('connection', function (socket) {
     usersModule.UserModel.findOneAndUpdate({ lastCookieId : cookie.parse(socket.handshake.headers['cookie']).DBSession, lastCookieExpires : { $gte : new Date().getTime() / 1000 } }, { LastSocketId : socket.id }, function(err, arUser){});    
     
     socket.on('joinTopic', function (data) {        
+        
         socket.join(data.topic_id);           
         
-        var arResult = new Object();
-
-async.waterfall([
-	function(callback){
-            //console.log("Получаем сообщения обсуждения об обсуждении");
-            debatesModule.GetMessagesByTopicID( data.topic_id, function(err, MessagesList){
+        async.waterfall([
+            function(callback){
+                debatesModule.GetMessagesByTopicID( data.topic_id, function(err, MessagesList){
                     if(err){
                             console.log('Error while saving topic message');
                     }else{
                             callback(null, MessagesList);
                     }
+                });
+            }],
+            function (Err, arResult) {
+                if(!Err){
+                        socket.emit('messages_list', { 'messages' : arResult });
+                }else{
+                        console.log('Main async error while getting topic messages');
+                }
             });
-            },
-            function(arResult, callback){
-                    callback(null, arResult);
-            }], function (Err, arResult) {
-            //Отправляем ответ
-
-            if(!Err){
-                    socket.emit('messages_list', { 'messages' : arResult });
-            }else{
-                    console.log('Main async error while saving topic message');
-            }
-        });
     });              
   
   socket.on('message', function (data) {
