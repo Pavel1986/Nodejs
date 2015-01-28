@@ -18,9 +18,7 @@ topic_time = new Date(1421231881 * 1000);
 //debatesModule.CheckTopics();
 
 io.on('connection', function (socket) {
-    
-    console.log(socket.id);
-            
+                
     //Если пользователь авторизован, то сохраняем в него последний SocketID
     usersModule.UserModel.findOneAndUpdate({ lastCookieId : cookie.parse(socket.handshake.headers['cookie']).DBSession, lastCookieExpires : { $gte : new Date().getTime() / 1000 } }, { LastSocketId : socket.id }, function(err, arUser){});    
     
@@ -134,7 +132,7 @@ io.on('connection', function (socket) {
                 });                
             },
             function(arResult, callback){                
-                /*console.log("- Обновляем обсуждение (members, status, unix_temp_time)");
+                console.log("- Обновляем обсуждение (members, status, unix_temp_time)");
                 debatesModule.TopicModel.findByIdAndUpdate( arResult.TopicID, { $push: { members : arResult.MemberID }, status_code : "processing", unix_temp_time : new Date().getTime() / 1000 }, function(err, numberAffected ){                   
                     if(err){
                         console.log(err);
@@ -142,7 +140,7 @@ io.on('connection', function (socket) {
                     }else{
                         callback(null, arResult);
                     }                    
-                });     */
+                });     
                 callback(null, arResult);
             },
             function(arResult, callback){                
@@ -167,9 +165,9 @@ io.on('connection', function (socket) {
                 //2. Отправляем всем в обсуждении это сообщение               
                 RoomMembers = getAllRoomMembers(arResult.TopicID);
                 if (RoomMembers.indexOf(arResult.AuthorLastSocketId) < 0){
-                   io.to(arResult.AuthorLastSocketId).emit('TopicStartedAuthor', {});
+                   io.to(arResult.AuthorLastSocketId).emit('TopicStartedAuthor', { topic_id : arResult.TopicID });
                 }
-                io.sockets.to(arResult.TopicID).emit('TopicStarted', {});
+                io.sockets.to(arResult.TopicID).emit('TopicStarted', { topic_id : arResult.TopicID });
             }
         });                    
   });
