@@ -15,7 +15,7 @@ current_date = new Date().getTime() / 1000;
 topic_time = new Date(1421231881 * 1000);
 
 //console.log(topic_time);
-//debatesModule.CheckTopics();
+debatesModule.CheckTopics(io);
 
 io.on('connection', function (socket) {
                 
