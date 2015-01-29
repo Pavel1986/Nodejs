@@ -19,10 +19,10 @@ debatesModule.CheckTopics(io);
 
 io.on('connection', function (socket) {
                 
-    //Если пользователь авторизован, то сохраняем в него последний SocketID
-    usersModule.UserModel.findOneAndUpdate({ lastCookieId : cookie.parse(socket.handshake.headers['cookie']).DBSession, lastCookieExpires : { $gte : new Date().getTime() / 1000 } }, { LastSocketId : socket.id }, function(err, arUser){});    
+  //Если пользователь авторизован, то сохраняем в него последний SocketID
+  usersModule.UserModel.findOneAndUpdate({ lastCookieId : cookie.parse(socket.handshake.headers['cookie']).DBSession, lastCookieExpires : { $gte : new Date().getTime() / 1000 } }, { LastSocketId : socket.id }, function(err, arUser){});    
     
-    socket.on('joinTopic', function (data) {        
+  socket.on('joinTopic', function (data) {        
         
         socket.join(data.topic_id);           
         
