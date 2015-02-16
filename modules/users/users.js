@@ -17,18 +17,26 @@ var GetUser = function(Params, Fields, Options, FuncCallback){
     });
 }
 
-var CheckUserAuthorization = function(arParams, FuncCallback){
-    
-    arParams.lastCookieExpires = { $gte : new Date().getTime() / 1000 };
-    
-    console.log("Производим поиск среди пользователей");                
-    
-    console.log(arParams);
-
+var CheckUserAuthorization = function(CookieID, FuncCallback){
+            
     //Выбираем пользователя, у которого время закрытия сессии больше, чем текущее. 
-    UserModel.findOne( arParams, '_id', { lean : true }, function(err, User){
+    /*
+     *  If found return User object, if not = false     * 
+     */
+    
+    /* Почему закончилась сессия раньше времени ??? в Symfony  */
+    
+    UserModel.findOne( { lastCookieExpires : { $gte : Math.round(new Date().getTime() / 1000) }, lastCookieId : CookieID } , '_id lastCookieExpires', { lean : true }, function(err, User){
+        
+        currentTime = Math.round(new Date().getTime() / 1000);
+        
         if(User){
-            FuncCallback(true);                
+            console.log('Current time : ' + currentTime);
+            console.log('Users expires times :' + User.lastCookieExpires);
+            if(currentTime < User.lastCookieExpires){
+                console.log('Current time is < lastCookieExpires');
+            }
+            FuncCallback(User);                
         }else{
             FuncCallback(false);
         }

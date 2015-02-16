@@ -15,7 +15,7 @@ current_date = new Date().getTime() / 1000;
 topic_time = new Date(1421231881 * 1000);
 
 //console.log(topic_time);
-debatesModule.CheckTopics(io);
+//debatesModule.CheckTopics(io);
 
 io.on('connection', function (socket) {
                 
@@ -96,7 +96,7 @@ io.on('connection', function (socket) {
     
     async.waterfall([
             function(callback){                
-                console.log("- Проверка авторизации пользователя. Получаем пользователя и находим его язык");                
+                console.log("- Проверка авторизации пользователя. Получаем пользователя и находим его язык");                                
                 usersModule.GetUser({ _id : arResult.MemberID, lastCookieId : arResult.CookieID, enabled : true, lastCookieExpires : { $gte : new Date().getTime() / 1000 } }, "system_language", { lean : true }, function(arUser){
                     if(arUser){
                         arResult.Language = arUser.system_language;
@@ -171,7 +171,60 @@ io.on('connection', function (socket) {
             }
         });                    
   });
-
+  
+  socket.on('VoteMember', function(arResult){
+      
+      console.log(arResult);      
+      arResult.CookieID = cookie.parse(socket.handshake.headers['cookie']).DBSession;
+      
+      async.waterfall([
+            function(callback){                
+                console.log("Проверяем авторизован ли пользователь запроса");
+                /* С авторизацией пока что всё нормально. Надо проверить авторизацию по истечении времени Expires!! */
+                usersModule.CheckUserAuthorization(arResult.CookieID, function(User){
+                    if(User){
+                        arResult.User = User;     
+                        callback(null, arResult);
+                    }else{
+                        arResult.errorMessage = "User is not authorized";
+                        callback(true, arResult);                        
+                    }                    
+                });                
+            },
+            function(arResult, callback){                
+                //console.log("Проверяем, что пользователь запроса не участвует в активных обсуждениях");
+                /* Почему-то неправильно отрабатывает проверка на участие пользователя в активных обсуждения, проверитЬ!!! */
+                console.log('User ID : ' + arResult.User._id);
+                usersModule.isUserAnyTopicMember(arResult.User._id, false, function(UserIsTopicMember){                    
+                    if(UserIsTopicMember){          
+                        console.log("User is member of active topics.");
+                        callback(true, "User is member of active topics.");
+                    }else{
+                        console.log("User is not member of active topics.");
+                        callback(null, arResult);                    
+                    }                    
+                })                
+            },            
+            function(arResult, callback){
+                //console.log("Проверяем, что данные обсуждение существует в статусе processing и пользователь за которого голосуют участвует в этом обсуждении");
+                callback(null, arResult);
+            },
+            function(arResult, callback){
+                //console.log("Если найден предыдущий голос, то обновляем его member_id, если нет, то создаём (upsert)");
+                callback(null, arResult);
+            }
+        ], function (Err, arResult) {
+            //Производим рассылку сокет-сообщений, что надо обновить количество голосов.
+            if(!Err){
+                //io.to(arResult.topic_id).emit('VotesMembers', arParams.message);
+            }else{
+                console.log('Main async error while voting per member');
+                console.log(arResult.errorMessage);
+            }
+        });  
+      
+  });
+  
   socket.on('disconnect', function () {
     io.sockets.emit('Disconnected');
   });
